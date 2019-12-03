@@ -1,4 +1,3 @@
-#include <stdarg.h>
 #include <SevenSeg.h>
 
 // Give names to the pins to be used for each segment
@@ -26,7 +25,7 @@ SevenSeg disp(a_pin, b_pin, c_pin, d_pin, e_pin, f_pin, g_pin);
 // Useful variables for counting rotations. Revolutions is volatile because it will be changed 
 // by the interrupt function
 volatile long start_time = 0;
-volatile int delta_t = 2000000;
+volatile int delta_t = 20000;
 
 // Size of the wheel and various helpful constants
 // Change wheel_diameter_inches to whatever is needed
@@ -34,7 +33,7 @@ float wheel_diameter_inches = 20.0;
 float wheel_circumference_inches = wheel_diameter_inches * 3.141592;
 float inches_per_mile = 63360.0;
 
-volatile float current_mph = 0;
+float current_mph = 0;
 
 void setup() {
   // Tell the library what common pins to use for digits, and what pin is for the decimal point
@@ -50,21 +49,26 @@ void setup() {
 void loop() {
   // Update display every second
   current_mph = convert_delta_t_to_mph(delta_t);
-  //Serial.println(millis() - start_time);
+  
+  // If there is more than 2 seconds with no revolutions, the speed is 0 mph
   if (millis() - start_time > 2000){
     current_mph = 0.0;
   }
-  int ten_seconds = millis()/100;
-  float seconds = ten_seconds/10.0;
+  
+  // Write the speed to the 7 segment display
   disp.write(current_mph);
 }
 
 void count_revolution(){
-  delta_t = millis() - start_time;
-  start_time = millis();
+  // Whenever the revolution happens, mark down how long it took to turn, and set the new start time
+  if (millis() - start_time > 50){
+    delta_t = millis() - start_time;
+    start_time = millis();
+  }
 }
 
 float convert_delta_t_to_mph(float delta_t){
+  // This takes the time between the revolutions and returns the speed calculated from it
   float delta_t_seconds = delta_t / 1000.0;
   float in_per_second = wheel_circumference_inches / delta_t_seconds;
   float in_per_hour   = in_per_second * 3600.0;
