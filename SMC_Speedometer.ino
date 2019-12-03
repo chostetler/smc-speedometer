@@ -37,7 +37,6 @@ float inches_per_mile = 63360.0;
 volatile float current_mph = 0;
 
 void setup() {
-  Serial.begin(9600);
   // Tell the library what common pins to use for digits, and what pin is for the decimal point
   disp.setDigitPins(num_of_digits, digit_pins);
   disp.setDPPin(decimal_pin);
@@ -49,7 +48,6 @@ void setup() {
 }
 
 void loop() {
-  //Serial.println(delta_t);
   // Update display every second
   current_mph = convert_delta_t_to_mph(delta_t);
   //Serial.println(millis() - start_time);
@@ -63,8 +61,6 @@ void loop() {
 
 void count_revolution(){
   delta_t = millis() - start_time;
-  Serial.print("Revolution! Delta_t:");
-  Serial.println(delta_t);
   start_time = millis();
 }
 
@@ -74,7 +70,6 @@ float convert_delta_t_to_mph(float delta_t){
   float in_per_hour   = in_per_second * 3600.0;
   float mi_per_hour   = in_per_hour / inches_per_mile;
   float miles_per_hour_rounded = round(100 * mi_per_hour) / 100.0;
-  Serial.println(in_per_second);
   current_mph = miles_per_hour_rounded;
   return(miles_per_hour_rounded);
 }
