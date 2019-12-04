@@ -51,8 +51,8 @@ void loop() {
   } else if (hall_effect_state == HIGH){
     triggered = false;
   }
-  // Update display every second
-  current_mph = convert_delta_t_to_mph(delta_t);
+  
+  current_mph = get_mph();
   
   //If there is more than 2 seconds with no revolutions, the speed is 0 mph
   if (current_time - start_time > 2000){
@@ -74,9 +74,9 @@ void count_revolution(){
   Serial.println(convert_delta_t_to_mph(delta_t));
 }
 
-float convert_delta_t_to_mph(long dt){
+float get_mph(){
   // This takes the time between the revolutions and returns the speed calculated from it
-  float delta_t_seconds = dt / 1000.0;
+  float delta_t_seconds = delta_t / 1000.0;
   float in_per_second = wheel_circumference_inches / delta_t_seconds;
   float in_per_hour   = in_per_second * 3600.0;
   float mi_per_hour   = in_per_hour / inches_per_mile;
