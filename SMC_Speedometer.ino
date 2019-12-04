@@ -54,7 +54,7 @@ void loop() {
   // Update display every second
   current_mph = convert_delta_t_to_mph(delta_t);
   
-   If there is more than 2 seconds with no revolutions, the speed is 0 mph
+  //If there is more than 2 seconds with no revolutions, the speed is 0 mph
   if (current_time - start_time > 2000){
     current_mph = 0.0;
   }
