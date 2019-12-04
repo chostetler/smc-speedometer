@@ -1,31 +1,19 @@
 #include <SevenSeg.h>
 
-// Give names to the pins to be used for each segment
-int a_pin = 9;
-int b_pin = 12;
-int c_pin = 3;
-int d_pin = 8;
-int e_pin = 7;
-int f_pin = 2;
-int g_pin = 11;
-int decimal_pin = 4;
-
-// And the digit pins
+// Choose the anode pins for the digits
 const int num_of_digits = 3;
-int digit_1 = 10;
-int digit_2 = 6;
-int digit_3 = 5;
-int digit_pins[num_of_digits] = {digit_1, digit_2, digit_3};
+int digit_pins[num_of_digits] = {10, 6, 5};
+
+// Initialize the seven segment display
+SevenSeg disp(9, 12, 3, 8, 7, 2, 11);
 
 int hall_effect_pin = 0;
 
-// Initialize the seven segment display
-SevenSeg disp(a_pin, b_pin, c_pin, d_pin, e_pin, f_pin, g_pin);
-
 // Useful variables for counting rotations. Revolutions is volatile because it will be changed 
 // by the interrupt function
-volatile long start_time = 0;
-volatile int delta_t = 20000;
+unsigned long start_time = 0;
+unsigned long delta_t = 20000;
+unsigned long current_time = 0;
 
 // Size of the wheel and various helpful constants
 // Change wheel_diameter_inches to whatever is needed
@@ -33,47 +21,66 @@ float wheel_diameter_inches = 20.0;
 float wheel_circumference_inches = wheel_diameter_inches * 3.141592;
 float inches_per_mile = 63360.0;
 
-float current_mph = 0;
+float current_mph = 0.0;
+
+bool triggered = false;
 
 void setup() {
+  Serial.begin(9600);
   // Tell the library what common pins to use for digits, and what pin is for the decimal point
   disp.setDigitPins(num_of_digits, digit_pins);
-  disp.setDPPin(decimal_pin);
+  disp.setDPPin(4);
+  disp.setDigitDelay(1000);
 
-  // Set it up so magnet_detected will be called each time the magnet passes by the sensor (pin 0)
-  // This runs in the background, so nothing needs to be explicitly put in the loop() function.
+  // Use the hall effect sensor to trigger the calculation
   pinMode(hall_effect_pin, INPUT);
-  attachInterrupt(digitalPinToInterrupt(hall_effect_pin), count_revolution, FALLING); 
+
+  String intro_string = "   SPEEDOTRON 2000   ";
+  while (millis() <= (intro_string.length()-2)*200){
+    int first_letter_index = round(millis() / 200);
+    disp.write(intro_string.substring(first_letter_index, first_letter_index + 3));
+  }
 }
 
 void loop() {
+  current_time = millis();
+  bool hall_effect_state = digitalRead(hall_effect_pin);
+  if (hall_effect_state == LOW and !triggered){
+    triggered = true;
+    count_revolution();
+  } else if (hall_effect_state == HIGH){
+    triggered = false;
+  }
   // Update display every second
   current_mph = convert_delta_t_to_mph(delta_t);
   
-  // If there is more than 2 seconds with no revolutions, the speed is 0 mph
-  if (millis() - start_time > 2000){
+   If there is more than 2 seconds with no revolutions, the speed is 0 mph
+  if (current_time - start_time > 2000){
     current_mph = 0.0;
   }
-  
   // Write the speed to the 7 segment display
   disp.write(current_mph);
 }
 
 void count_revolution(){
   // Whenever the revolution happens, mark down how long it took to turn, and set the new start time
-  if (millis() - start_time > 50){
-    delta_t = millis() - start_time;
-    start_time = millis();
+  if (current_time - start_time > 50){
+    delta_t = current_time - start_time;
+    start_time = current_time;
   }
+  Serial.print("Delta t: ");
+  Serial.print(delta_t);
+  Serial.print(" - MPH: ");
+  Serial.println(convert_delta_t_to_mph(delta_t));
 }
 
-float convert_delta_t_to_mph(float delta_t){
+float convert_delta_t_to_mph(long dt){
   // This takes the time between the revolutions and returns the speed calculated from it
-  float delta_t_seconds = delta_t / 1000.0;
+  float delta_t_seconds = dt / 1000.0;
   float in_per_second = wheel_circumference_inches / delta_t_seconds;
   float in_per_hour   = in_per_second * 3600.0;
   float mi_per_hour   = in_per_hour / inches_per_mile;
   float miles_per_hour_rounded = round(100 * mi_per_hour) / 100.0;
-  current_mph = miles_per_hour_rounded;
+  //Serial.println(delta_t);
   return(miles_per_hour_rounded);
 }
