@@ -26,7 +26,7 @@ float current_mph = 0.0;
 bool triggered = false;
 
 void setup() {
-  Serial.begin(9600);
+  // Serial.begin(115200);
   // Tell the library what common pins to use for digits, and what pin is for the decimal point
   disp.setDigitPins(num_of_digits, digit_pins);
   disp.setDPPin(4);
@@ -45,6 +45,7 @@ void setup() {
 void loop() {
   current_time = millis();
   bool hall_effect_state = digitalRead(hall_effect_pin);
+  // Only trigger once for each pass of magnet
   if (hall_effect_state == LOW and !triggered){
     triggered = true;
     count_revolution();
@@ -68,10 +69,10 @@ void count_revolution(){
     delta_t = current_time - start_time;
     start_time = current_time;
   }
-  Serial.print("Delta t: ");
-  Serial.print(delta_t);
-  Serial.print(" - MPH: ");
-  Serial.println(convert_delta_t_to_mph(delta_t));
+  //Serial.print("Delta t: ");
+  //Serial.print(delta_t);
+  //Serial.print(" - MPH: ");
+  //Serial.println(get_mph());
 }
 
 float get_mph(){
